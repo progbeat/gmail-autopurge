@@ -37,7 +37,7 @@ To avoid tiny surprise cleanups, a run only moves mail when it finds at least 25
 
 ```js
 const MIN_THREADS_TO_DELETE = 25;
-const MAX_THREADS_PER_RUN = 100;
+const MAX_THREADS_PER_RUN = 50;
 ```
 
 Because Gmail Apps Script moves whole threads, the batch threshold is based on Gmail threads, not individual messages.
@@ -231,7 +231,7 @@ const PURGE_LABEL = "Purge";
 const KEEP_LABEL = "Keep";
 const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
-const MAX_THREADS_PER_RUN = 100;
+const MAX_THREADS_PER_RUN = 50;
 const MIN_THREADS_TO_DELETE = 25;
 const SEND_DELETE_REPORT = true;
 ```
