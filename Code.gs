@@ -4,6 +4,7 @@ const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 100;
 const MIN_THREADS_TO_DELETE = 25;
+const THREAD_SEARCH_LOOKAHEAD = 500;
 const SEND_DELETE_REPORT = true;
 const ERROR_REPORTS_ENABLED = true;
 
@@ -36,7 +37,7 @@ function executePurgeCleanup_(options) {
   const ignoreMinimum = Boolean(options && options.ignoreMinimum);
   const mode = dryRun ? "DRY_RUN" : "ACTIVE";
   const query = buildPurgeQuery();
-  const threads = GmailApp.search(query, 0, MAX_THREADS_PER_RUN);
+  const threads = selectOldestThreads_(query);
   const deletedThreads = [];
   const previewThreads = [];
   const errors = [];
@@ -84,6 +85,12 @@ function executePurgeCleanup_(options) {
   logResult_(result);
   maybeSendReport_(result);
   return result;
+}
+
+function selectOldestThreads_(query) {
+  const candidates = GmailApp.search(query, 0, THREAD_SEARCH_LOOKAHEAD);
+  candidates.sort((a, b) => a.getLastMessageDate() - b.getLastMessageDate());
+  return candidates.slice(0, MAX_THREADS_PER_RUN);
 }
 
 function buildPurgeQuery() {
