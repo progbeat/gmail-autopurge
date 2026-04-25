@@ -4,7 +4,7 @@ const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 100;
 const MIN_THREADS_TO_DELETE = 25;
-const THREAD_SEARCH_LOOKAHEAD = 500;
+const SEARCH_PAGE_SIZE = 250;
 const SEND_DELETE_REPORT = true;
 const ERROR_REPORTS_ENABLED = true;
 
@@ -37,7 +37,8 @@ function executePurgeCleanup_(options) {
   const ignoreMinimum = Boolean(options && options.ignoreMinimum);
   const mode = dryRun ? "DRY_RUN" : "ACTIVE";
   const query = buildPurgeQuery();
-  const threads = selectOldestThreads_(query);
+  const selection = selectOldestThreads_(query);
+  const threads = selection.selectedThreads;
   const deletedThreads = [];
   const previewThreads = [];
   const errors = [];
@@ -45,9 +46,9 @@ function executePurgeCleanup_(options) {
   let skippedCount = 0;
   let skippedReason = "";
 
-  if (!dryRun && !ignoreMinimum && threads.length < MIN_THREADS_TO_DELETE) {
-    skippedCount = threads.length;
-    skippedReason = `Only ${threads.length} matching threads found; minimum is ${MIN_THREADS_TO_DELETE}.`;
+  if (!dryRun && !ignoreMinimum && selection.totalMatches < MIN_THREADS_TO_DELETE) {
+    skippedCount = selection.totalMatches;
+    skippedReason = `Only ${selection.totalMatches} matching threads found; minimum is ${MIN_THREADS_TO_DELETE}.`;
   } else {
     threads.forEach((thread) => {
       try {
@@ -73,7 +74,7 @@ function executePurgeCleanup_(options) {
     startedAt: startedAt.toISOString(),
     mode,
     query,
-    matchedThreadsCount: threads.length,
+    matchedThreadsCount: selection.totalMatches,
     movedToTrashCount,
     skippedCount,
     skippedReason,
@@ -88,9 +89,33 @@ function executePurgeCleanup_(options) {
 }
 
 function selectOldestThreads_(query) {
-  const candidates = GmailApp.search(query, 0, THREAD_SEARCH_LOOKAHEAD);
+  const candidates = findMatchingThreads_(query);
   candidates.sort((a, b) => a.getLastMessageDate() - b.getLastMessageDate());
-  return candidates.slice(0, MAX_THREADS_PER_RUN);
+  return {
+    totalMatches: candidates.length,
+    selectedThreads: candidates.slice(0, MAX_THREADS_PER_RUN),
+  };
+}
+
+function findMatchingThreads_(query) {
+  const allThreads = [];
+  let offset = 0;
+
+  while (true) {
+    const page = GmailApp.search(query, offset, SEARCH_PAGE_SIZE);
+    if (page.length === 0) {
+      break;
+    }
+
+    allThreads.push.apply(allThreads, page);
+    offset += page.length;
+
+    if (page.length < SEARCH_PAGE_SIZE) {
+      break;
+    }
+  }
+
+  return allThreads;
 }
 
 function buildPurgeQuery() {

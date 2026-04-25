@@ -41,7 +41,7 @@ const MAX_THREADS_PER_RUN = 100;
 ```
 
 Because Gmail Apps Script moves whole threads, the batch threshold is based on Gmail threads, not individual messages.
-When a run executes, it processes the oldest matching threads first.
+When a run executes, it scans all matching threads, sorts them by age, and processes the oldest ones first.
 
 ## Filter strategy
 
