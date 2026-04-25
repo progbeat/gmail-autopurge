@@ -5,6 +5,7 @@ const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 50;
 const MIN_THREADS_TO_DELETE = 25;
 const SEARCH_LOOKAHEAD_LIMIT = 1000;
+const GMAIL_SEARCH_PAGE_SIZE = 500;
 const SEND_DELETE_REPORT = true;
 const ERROR_REPORTS_ENABLED = true;
 
@@ -99,7 +100,25 @@ function selectOldestThreads_(query) {
 }
 
 function findCandidateThreads_(query) {
-  return GmailApp.search(query, 0, SEARCH_LOOKAHEAD_LIMIT);
+  const threads = [];
+  let start = 0;
+
+  while (start < SEARCH_LOOKAHEAD_LIMIT) {
+    const pageSize = Math.min(GMAIL_SEARCH_PAGE_SIZE, 500, SEARCH_LOOKAHEAD_LIMIT - start);
+    const page = GmailApp.search(query, start, pageSize);
+    if (!page || page.length === 0) {
+      break;
+    }
+
+    threads.push(...page);
+    if (page.length < pageSize) {
+      break;
+    }
+
+    start += page.length;
+  }
+
+  return threads;
 }
 
 function buildPurgeQuery() {
