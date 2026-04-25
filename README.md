@@ -52,14 +52,12 @@ The shared defaults are designed around retention risk, not sender prestige.
 
 As a rule of thumb:
 
-- Good `Purge` candidates: review reminders, email confirmation, account confirmation, one-time codes, KYC workflow prompts, and temporary expiration notices.
+- Good `Purge` candidates: review reminders, email confirmation, one-time codes, news, and temporary expiration notices.
 - Bad `Purge` candidates: personal conversation history, contracts, agreements, invoices, receipts, statements, transfers, withdrawals, deposits, payments, payouts, settlements, and similar records.
 
 This is why the shared defaults use broad disposable-message concepts like `verification`, `confirmation`, and `KYC`, but also include negative terms to avoid obvious financial or contractual records.
 
 ## How to create safe filters
-
-Most people do not use filters because Gmail makes them feel more dangerous than they really are. The safest way to think about them is:
 
 1. Start with a Gmail search query, not a filter.
 2. Inspect recent matches manually.
