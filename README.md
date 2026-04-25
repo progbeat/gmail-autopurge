@@ -13,35 +13,11 @@ The script runs inside your own Google account. It searches for old `Purge` thre
 
 ## Safety rules
 
-The cleanup query is:
-
-```text
-label:Purge older_than:1000d -label:Keep -is:starred
-```
-
-The script only calls:
-
-```js
-thread.moveToTrash();
-```
-
-It does not use permanent deletion. Gmail Trash remains your recovery window.
-
-By default, active cleanup is enabled:
-
-```js
-const DRY_RUN = false;
-```
-
-To avoid tiny surprise cleanups, a run only moves mail when it finds at least 25 matching Gmail threads:
-
-```js
-const MIN_THREADS_TO_DELETE = 25;
-const MAX_THREADS_PER_RUN = 50;
-```
-
-Because Gmail Apps Script moves whole threads, the batch threshold is based on Gmail threads, not individual messages.
-When a run executes, it reads the first 1000 query matches, sorts them by age, and processes the oldest ones first.
+- Only threads with `Purge` are eligible for cleanup.
+- `Keep` and starred threads are always protected.
+- Cleanup applies only to old mail (retention is 1000 days by default).
+- The script moves mail to Trash, not permanent deletion.
+- Cleanup is active by default (`DRY_RUN = false`).
 
 ## Filter strategy
 
@@ -146,8 +122,7 @@ If you want to inspect candidates before active cleanup, run:
 ```js
 previewPurgeCleanup
 ```
-
-This logs matching threads without moving anything. It ignores the minimum batch threshold so you can see candidates even when there are fewer than 25.
+This shows candidates without moving anything.
 
 ## Delete reports
 
@@ -157,20 +132,8 @@ By default, Gmail AutoPurge sends you a report email every time it moves threads
 const SEND_DELETE_REPORT = true;
 ```
 
-The report includes:
-
-- timestamp
-- mode
-- search query
-- matched count
-- moved count
-- skipped count
-- errors
-- sender, subject, date, and a clickable Gmail Trash search link for each moved thread
-
-Those links should open the trashed threads in Gmail so you can restore anything important from Trash.
-Report rows are shown in anti-chronological order (newer at the top, older at the bottom) for faster review.
-Review these reports periodically. If you see important messages in the report, tighten your `Purge` filter and/or broaden your `Keep` filter.
+The report includes a compact list of moved threads so you can quickly review and restore anything important from Trash.
+Review these reports periodically. If you see important messages there, tighten `Purge` filters and/or broaden `Keep`.
 
 Report emails are labeled `Purge` on a best-effort basis, so they can age out later too. To disable normal delete reports, change:
 
@@ -179,8 +142,6 @@ const SEND_DELETE_REPORT = false;
 ```
 
 Error reports are still sent when errors occur.
-
-No normal report email is sent when a run is skipped because fewer than 25 matching threads were found.
 
 ## Restore mail from Trash
 
@@ -209,23 +170,6 @@ Use the in-app browser to set up Gmail AutoPurge for me.
 9. Do not permanently delete anything.
 ```
 
-Codex can also run `previewPurgeCleanup()` and summarize the execution logs before active cleanup.
-
-## Deploy with clasp
-
-If you use `clasp`, this repo includes a helper script:
-
-```bash
-./scripts/clasp-push.sh
-```
-
-Before running it the first time:
-
-1. Install `clasp` and log in.
-2. Create or clone your Apps Script project so `.clasp.json` exists in this directory.
-
-The script pushes local files to your linked Apps Script project.
-
 ## Why this is self-hosted
 
 A true one-click connected app would require a Google OAuth app, verification, privacy policy, review, hosting, and ongoing maintenance. Gmail cleanup requires sensitive mailbox permissions, so publishing it as a general connected app is much heavier than a small personal automation.
@@ -236,11 +180,11 @@ This repo keeps the trust boundary simple: the script runs in your own Google ac
 
 Yes, but not in this v1.
 
-Gmail filters can be created through the Gmail API, but that requires additional Gmail settings permissions and enabling the Advanced Gmail service in Apps Script. For the first version, `gmail-filters.xml` is simpler, more transparent, and easier to review before use.
+For now, importing `gmail-filters.xml` is simpler and easier to review before use.
 
 ## Configuration
 
-Edit the constants at the top of `Code.gs`:
+If you want to customize behavior, edit these constants in `Code.gs`:
 
 ```js
 const PURGE_LABEL = "Purge";
@@ -252,21 +196,21 @@ const MIN_THREADS_TO_DELETE = 25;
 const SEND_DELETE_REPORT = true;
 ```
 
-Recommended changes:
+Common changes:
 
-- Set `DRY_RUN = true` if you want scheduled runs to log only.
-- Set `SEND_DELETE_REPORT = false` if you do not want success emails.
-- Increase `RETENTION_DAYS` if you want a longer retention period.
+- `DRY_RUN = true` for preview-only runs.
+- `SEND_DELETE_REPORT = false` to disable success reports.
+- `RETENTION_DAYS` if you want a longer or shorter retention window.
 
 ## Troubleshooting
 
 ### Nothing was moved
 
-Check the execution log. If fewer than 25 matching threads were found, the run is skipped by design.
+Check labels first: only old `Purge` threads are eligible, and `Keep`/starred threads are excluded.
 
 ### I want smaller batches
 
-Lower `MAX_THREADS_PER_RUN` if you want a smaller maximum batch. Lower `MIN_THREADS_TO_DELETE` if you want cleanup to run even when fewer matching threads are found.
+Lower `MAX_THREADS_PER_RUN` for smaller cleanup batches.
 
 ### I got a permissions warning
 
