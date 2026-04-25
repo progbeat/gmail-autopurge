@@ -10,8 +10,10 @@
     <id>tag:mail.google.com,2008:filter:z0000000000000000001</id>
     <updated>2026-04-25T00:00:00Z</updated>
     <content></content>
-    <apps:property name='from' value='no-reply@agoda.com'/>
-    <apps:property name='hasTheWord' value='(&quot;would you recommend&quot; OR &quot;Final Reminder&quot; OR &quot;rate your stay&quot;)'/>
+    <apps:property
+      name='hasTheWord'
+      value='(&quot;verification code&quot; OR &quot;confirmation code&quot; OR &quot;one-time code&quot; OR &quot;one-time password&quot; OR &quot;confirm your email&quot; OR &quot;verify your email&quot; OR &quot;account confirmation&quot;) -(invoice OR receipt OR statement OR contract OR agreement OR transfer OR withdrawal OR deposit OR payment OR payout OR settlement OR conversation OR meeting OR call)'
+    />
     <apps:property name='label' value='Purge'/>
   </entry>
 
@@ -21,60 +23,10 @@
     <id>tag:mail.google.com,2008:filter:z0000000000000000002</id>
     <updated>2026-04-25T00:00:00Z</updated>
     <content></content>
-    <apps:property name='from' value='automated@airbnb.com'/>
-    <apps:property name='hasTheWord' value='(&quot;write a review&quot; OR &quot;final reminder&quot; OR &quot;review your stay&quot;)'/>
-    <apps:property name='label' value='Purge'/>
-  </entry>
-
-  <entry>
-    <category term='filter'></category>
-    <title>Mail Filter</title>
-    <id>tag:mail.google.com,2008:filter:z0000000000000000003</id>
-    <updated>2026-04-25T00:00:00Z</updated>
-    <content></content>
     <apps:property
       name='hasTheWord'
-      value='(&quot;confirm your email&quot; OR &quot;verify your email&quot; OR &quot;verify your account email&quot; OR &quot;account confirmation&quot; OR &quot;email confirmation&quot; OR &quot;confirmation token&quot;) -(invoice OR receipt OR statement OR contract OR agreement OR transfer OR withdrawal OR deposit OR payment OR payout OR settlement)'
+      value='(invoice OR receipt OR statement OR contract OR agreement OR transfer OR withdrawal OR deposit OR payment OR payout OR settlement)'
     />
-    <apps:property name='label' value='Purge'/>
-  </entry>
-
-  <entry>
-    <category term='filter'></category>
-    <title>Mail Filter</title>
-    <id>tag:mail.google.com,2008:filter:z0000000000000000004</id>
-    <updated>2026-04-25T00:00:00Z</updated>
-    <content></content>
-    <apps:property
-      name='hasTheWord'
-      value='(&quot;verification code&quot; OR &quot;confirmation code&quot; OR &quot;one-time code&quot; OR &quot;one-time password&quot; OR otp) -(invoice OR receipt OR statement OR contract OR agreement OR transfer OR withdrawal OR deposit OR payment OR payout OR settlement)'
-    />
-    <apps:property name='label' value='Purge'/>
-  </entry>
-
-  <entry>
-    <category term='filter'></category>
-    <title>Mail Filter</title>
-    <id>tag:mail.google.com,2008:filter:z0000000000000000005</id>
-    <updated>2026-04-25T00:00:00Z</updated>
-    <content></content>
-    <apps:property
-      name='hasTheWord'
-      value='(verification OR confirmation OR KYC) -(invoice OR receipt OR statement OR contract OR agreement OR transfer OR withdrawal OR deposit OR payment OR payout OR settlement OR conversation OR replied OR wrote OR meeting OR call)'
-    />
-    <apps:property name='label' value='Purge'/>
-  </entry>
-
-  <entry>
-    <category term='filter'></category>
-    <title>Mail Filter</title>
-    <id>tag:mail.google.com,2008:filter:z0000000000000000006</id>
-    <updated>2026-04-25T00:00:00Z</updated>
-    <content></content>
-    <apps:property
-      name='hasTheWord'
-      value='(&quot;expires soon&quot; OR &quot;1 day left&quot; OR &quot;last day&quot; OR &quot;expiring soon&quot; OR &quot;will expire&quot;) -(invoice OR receipt OR statement OR contract OR agreement OR transfer OR withdrawal OR deposit OR payment OR payout OR settlement)'
-    />
-    <apps:property name='label' value='Purge'/>
+    <apps:property name='label' value='Keep'/>
   </entry>
 </feed>

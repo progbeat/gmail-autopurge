@@ -53,10 +53,13 @@ The shared defaults are designed around retention risk, not sender prestige.
 
 As a rule of thumb:
 
-- Good `Purge` candidates: review reminders, email confirmation, one-time codes, news, and temporary expiration notices.
+- Good `Purge` candidates: account confirmation and one-time code messages.
 - Bad `Purge` candidates: personal conversation history, contracts, agreements, invoices, receipts, statements, transfers, withdrawals, deposits, payments, payouts, settlements, and similar records.
 
-This is why the shared defaults use broad disposable-message concepts like `verification`, `confirmation`, and `KYC`, but also include negative terms to avoid obvious financial or contractual records.
+The shared defaults are intentionally simple:
+
+- one `Purge` filter for one-time/account-confirmation mail, with exclusions for financial and conversational terms
+- one `Keep` filter for financial records and formal documents
 
 ## How to create safe filters
 
@@ -79,11 +82,8 @@ The default `gmail-filters.xml` should stay shared, generic, and conservative en
 
 Good shared defaults:
 
-- review reminders
-- account verification and confirmation
-- one-time code and OTP messages
-- KYC workflow prompts
-- temporary expiration notices
+- one clear `Purge` filter for one-time/account-confirmation messages
+- one clear `Keep` filter for transaction and document records
 
 Usually personal-only filters:
 
@@ -102,17 +102,13 @@ Usually personal-only filters:
 4. Choose **Import filters**.
 5. Select `gmail-filters.xml`.
 6. Review the filters.
-7. Confirm that the only action is **Apply label: Purge**.
+7. Confirm that every filter action is only **Apply label**.
 8. Create the filters.
 
-The included starter filters label these categories as `Purge`:
+The included starter filters are:
 
-- Agoda review reminders
-- Airbnb review reminders
-- account verification and email confirmation
-- one-time codes and OTP mail
-- KYC-style workflow messages
-- temporary expiration notices
+- one-time/account-confirmation messages (to `Purge`)
+- financial records and formal transaction mail (to `Keep`)
 
 The filters only apply a label. They do not delete, forward, mark important, skip inbox, or mark read.
 
@@ -173,6 +169,7 @@ The report includes:
 - sender, subject, date, and a clickable Gmail Trash search link for each moved thread
 
 Those links should open the trashed threads in Gmail so you can restore anything important from Trash.
+Review these reports periodically. If you see important messages in the report, tighten your `Purge` filter and/or broaden your `Keep` filter.
 
 Report emails are labeled `Purge` on a best-effort basis, so they can age out later too. To disable normal delete reports, change:
 
@@ -201,7 +198,7 @@ Ready-to-paste prompt:
 Use the in-app browser to set up Gmail AutoPurge for me.
 
 1. Open Gmail settings and import gmail-filters.xml.
-2. Verify every imported filter only applies the Purge label.
+2. Verify every imported filter only applies a label (`Purge` or `Keep`).
 3. Open script.google.com and create a new Apps Script project.
 4. Paste Code.gs into the project.
 5. Run install().
