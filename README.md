@@ -15,12 +15,6 @@ You label mail with two Gmail labels that the script respects:
 
 You create Gmail filters that apply these labels automatically as mail arrives. The script then runs once a day, finds old `Purge` threads, and moves them to Trash in batches.
 
-## Why this is self-hosted
-
-A true one-click connected app would require a Google OAuth app, verification, privacy policy, review, hosting, and ongoing maintenance. Gmail cleanup requires sensitive mailbox permissions, so publishing it as a general connected app is much heavier than a small personal automation.
-
-This repo keeps the trust boundary simple: the script runs in your own Google account, and no third-party server receives your email data.
-
 ## Setup
 
 ### Option A — Let Codex do it for you
@@ -37,7 +31,7 @@ Use the in-app browser to set up Gmail AutoPurge for me.
 3. Open script.google.com and create a new Apps Script project.
 4. Paste Code.gs into the project.
 5. Run install().
-6. Pause when Google asks for OAuth approval so I can approve it.
+6. Pause when Google asks for permission so I can approve it.
 7. Confirm that the Keep and Purge labels exist.
 8. Confirm that a daily runPurgeCleanup trigger exists.
 9. Do not permanently delete anything.
@@ -225,3 +219,9 @@ Run `install()` again. It reuses an existing `runPurgeCleanup` trigger instead o
 Yes, but not in this v1.
 
 For now, importing `gmail-filters.xml` is simpler and easier to review before use.
+
+## Why this is self-hosted
+
+A true one-click connected app would require a Google OAuth app, verification, privacy policy, review, hosting, and ongoing maintenance. Gmail cleanup requires sensitive mailbox permissions, so publishing it as a general connected app is much heavier than a small personal automation.
+
+This repo keeps the trust boundary simple: the script runs in your own Google account, and no third-party server receives your email data.
