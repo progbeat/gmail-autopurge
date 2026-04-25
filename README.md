@@ -16,7 +16,7 @@ The script runs inside your own Google account. It searches for old `Purge` thre
 The cleanup query is:
 
 ```text
-label:Purge older_than:365d -label:Keep -is:starred
+label:Purge older_than:1000d -label:Keep -is:starred
 ```
 
 The script only calls:
@@ -231,7 +231,7 @@ Edit the constants at the top of `Code.gs`:
 ```js
 const PURGE_LABEL = "Purge";
 const KEEP_LABEL = "Keep";
-const RETENTION_DAYS = 365;
+const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 100;
 const MIN_THREADS_TO_DELETE = 100;

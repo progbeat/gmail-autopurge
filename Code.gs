@@ -1,6 +1,6 @@
 const PURGE_LABEL = "Purge";
 const KEEP_LABEL = "Keep";
-const RETENTION_DAYS = 365;
+const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 100;
 const MIN_THREADS_TO_DELETE = 100;
