@@ -4,7 +4,7 @@ const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 50;
 const MIN_THREADS_TO_DELETE = 25;
-const SEARCH_PAGE_SIZE = 250;
+const SEARCH_LOOKAHEAD_LIMIT = 1000;
 const SEND_DELETE_REPORT = true;
 const ERROR_REPORTS_ENABLED = true;
 
@@ -75,6 +75,7 @@ function executePurgeCleanup_(options) {
     mode,
     query,
     matchedThreadsCount: selection.totalMatches,
+    searchLookaheadLimit: SEARCH_LOOKAHEAD_LIMIT,
     movedToTrashCount,
     skippedCount,
     skippedReason,
@@ -89,7 +90,7 @@ function executePurgeCleanup_(options) {
 }
 
 function selectOldestThreads_(query) {
-  const candidates = findMatchingThreads_(query);
+  const candidates = findCandidateThreads_(query);
   candidates.sort((a, b) => a.getLastMessageDate() - b.getLastMessageDate());
   return {
     totalMatches: candidates.length,
@@ -97,25 +98,8 @@ function selectOldestThreads_(query) {
   };
 }
 
-function findMatchingThreads_(query) {
-  const allThreads = [];
-  let offset = 0;
-
-  while (true) {
-    const page = GmailApp.search(query, offset, SEARCH_PAGE_SIZE);
-    if (page.length === 0) {
-      break;
-    }
-
-    allThreads.push.apply(allThreads, page);
-    offset += page.length;
-
-    if (page.length < SEARCH_PAGE_SIZE) {
-      break;
-    }
-  }
-
-  return allThreads;
+function findCandidateThreads_(query) {
+  return GmailApp.search(query, 0, SEARCH_LOOKAHEAD_LIMIT);
 }
 
 function buildPurgeQuery() {
@@ -255,12 +239,13 @@ function buildPlainReportBody_(result) {
   const threads = result.deletedThreads.length > 0
     ? result.deletedThreads
     : result.previewThreads;
+  const reportThreads = sortThreadsForReport_(threads);
 
   lines.push(result.deletedThreads.length > 0 ? "Moved threads:" : "Preview threads:");
-  if (threads.length === 0) {
+  if (reportThreads.length === 0) {
     lines.push("- none");
   } else {
-    threads.forEach((thread) => {
+    reportThreads.forEach((thread) => {
       lines.push(`- ${thread.date}: ${thread.from}`);
       lines.push(`  Subject: ${thread.subject}`);
     });
@@ -272,6 +257,7 @@ function buildPlainReportBody_(result) {
 function buildHtmlReportBody_(result) {
   const movedThreads = result.deletedThreads.length > 0;
   const threads = movedThreads ? result.deletedThreads : result.previewThreads;
+  const reportThreads = sortThreadsForReport_(threads);
   const title = movedThreads
     ? `${result.movedToTrashCount} threads moved to Trash`
     : "Gmail AutoPurge report";
@@ -288,7 +274,7 @@ function buildHtmlReportBody_(result) {
     `<div style="margin-top:6px;color:#5f6368;font-size:13px;line-height:1.5;">${escapeHtml_(subtitle)}</div>`,
     '</div>',
     buildSummaryTable_(result),
-    buildThreadTable_(threads),
+    buildThreadTable_(reportThreads),
     buildErrorBlock_(result.errors),
     '</div>',
     '<div style="padding:12px 4px;color:#6b7280;font-size:12px;line-height:1.5;">',
@@ -304,6 +290,7 @@ function buildSummaryTable_(result) {
     ["Run time", result.startedAt],
     ["Mode", result.mode],
     ["Matched", result.matchedThreadsCount],
+    ["Search window", `first ${result.searchLookaheadLimit} matches`],
     ["Moved", result.movedToTrashCount],
     ["Skipped", result.skippedCount],
     ["Query", result.query],
@@ -319,6 +306,12 @@ function buildSummaryTable_(result) {
     )).join(""),
     '</table>',
   ].join("");
+}
+
+function sortThreadsForReport_(threads) {
+  const copy = threads.slice();
+  copy.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return copy;
 }
 
 function buildThreadTable_(threads) {

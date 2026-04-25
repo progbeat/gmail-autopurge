@@ -41,7 +41,7 @@ const MAX_THREADS_PER_RUN = 50;
 ```
 
 Because Gmail Apps Script moves whole threads, the batch threshold is based on Gmail threads, not individual messages.
-When a run executes, it scans all matching threads, sorts them by age, and processes the oldest ones first.
+When a run executes, it reads the first 1000 query matches, sorts them by age, and processes the oldest ones first.
 
 ## Filter strategy
 
@@ -169,6 +169,7 @@ The report includes:
 - sender, subject, date, and a clickable Gmail Trash search link for each moved thread
 
 Those links should open the trashed threads in Gmail so you can restore anything important from Trash.
+Report rows are shown in anti-chronological order (newer at the top, older at the bottom) for faster review.
 Review these reports periodically. If you see important messages in the report, tighten your `Purge` filter and/or broaden your `Keep` filter.
 
 Report emails are labeled `Purge` on a best-effort basis, so they can age out later too. To disable normal delete reports, change:
@@ -209,6 +210,21 @@ Use the in-app browser to set up Gmail AutoPurge for me.
 ```
 
 Codex can also run `previewPurgeCleanup()` and summarize the execution logs before active cleanup.
+
+## Deploy with clasp
+
+If you use `clasp`, this repo includes a helper script:
+
+```bash
+./scripts/clasp-push.sh
+```
+
+Before running it the first time:
+
+1. Install `clasp` and log in.
+2. Create or clone your Apps Script project so `.clasp.json` exists in this directory.
+
+The script pushes local files to your linked Apps Script project.
 
 ## Why this is self-hosted
 
