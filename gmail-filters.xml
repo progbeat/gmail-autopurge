@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>
+  <title>Mail Filters</title>
+  <id>tag:mail.google.com,2008:filters:z0000000000000000000*0000000000000000000</id>
+  <updated>2026-04-25T00:00:00Z</updated>
+
+  <entry>
+    <category term='filter'></category>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:z0000000000000000001</id>
+    <updated>2026-04-25T00:00:00Z</updated>
+    <content></content>
+    <apps:property name='from' value='no-reply@agoda.com'/>
+    <apps:property name='hasTheWord' value='(&quot;would you recommend&quot; OR &quot;Final Reminder&quot; OR &quot;rate your stay&quot;)'/>
+    <apps:property name='label' value='Purge'/>
+  </entry>
+
+  <entry>
+    <category term='filter'></category>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:z0000000000000000002</id>
+    <updated>2026-04-25T00:00:00Z</updated>
+    <content></content>
+    <apps:property name='from' value='automated@airbnb.com'/>
+    <apps:property name='hasTheWord' value='(&quot;write a review&quot; OR &quot;final reminder&quot; OR &quot;review your stay&quot;)'/>
+    <apps:property name='label' value='Purge'/>
+  </entry>
+
+  <entry>
+    <category term='filter'></category>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:z0000000000000000003</id>
+    <updated>2026-04-25T00:00:00Z</updated>
+    <content></content>
+    <apps:property name='hasTheWord' value='(&quot;confirm your email&quot; OR &quot;verify your email&quot; OR &quot;verify your account email&quot; OR &quot;confirmation token&quot;)'/>
+    <apps:property name='label' value='Purge'/>
+  </entry>
+
+  <entry>
+    <category term='filter'></category>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:z0000000000000000004</id>
+    <updated>2026-04-25T00:00:00Z</updated>
+    <content></content>
+    <apps:property name='hasTheWord' value='(&quot;1 day left&quot; OR &quot;expires soon&quot; OR &quot;final reminder&quot; OR &quot;your package is about to expire&quot;)'/>
+    <apps:property name='label' value='Purge'/>
+  </entry>
+</feed>
