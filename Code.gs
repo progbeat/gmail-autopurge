@@ -3,7 +3,7 @@ const KEEP_LABEL = "Keep";
 const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 100;
-const MIN_THREADS_TO_DELETE = 100;
+const MIN_THREADS_TO_DELETE = 25;
 const SEND_DELETE_REPORT = true;
 const ERROR_REPORTS_ENABLED = true;
 
@@ -124,12 +124,33 @@ function getOrCreateLabel_(name) {
 
 function summarizeThread_(thread) {
   const firstMessage = thread.getMessages()[0];
+  const threadId = thread.getId();
+  const from = firstMessage.getFrom();
+  const messageId = firstMessage.getHeader("Message-ID");
   return {
-    from: firstMessage.getFrom(),
+    from,
+    sender: formatSender_(from),
     subject: firstMessage.getSubject(),
     date: firstMessage.getDate(),
-    permalink: thread.getPermalink(),
+    threadId,
+    messageId,
+    trashUrl: buildTrashUrl_(messageId, threadId),
   };
+}
+
+function buildTrashUrl_(messageId, threadId) {
+  if (messageId) {
+    const query = `in:trash rfc822msgid:${messageId}`;
+    return `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(query)}`;
+  }
+
+  return `https://mail.google.com/mail/u/0/#trash/${encodeURIComponent(threadId)}`;
+}
+
+function formatSender_(from) {
+  const withoutEmail = String(from).replace(/\s*<[^>]+>\s*$/, "");
+  const unquoted = withoutEmail.replace(/^"(.+)"$/, "$1").trim();
+  return unquoted || String(from).trim();
 }
 
 function logResult_(result) {
@@ -157,16 +178,28 @@ function sendReportEmail_(result, reportType) {
   const runId = Utilities.formatDate(
     new Date(result.startedAt),
     Session.getScriptTimeZone(),
-    "yyyyMMdd-HHmmss"
+    "yyyy-MM-dd HH:mm"
   );
-  const subject = `[Gmail AutoPurge] ${reportType} ${result.mode} ${runId}`;
-  const body = buildReportBody_(result);
+  const subject = buildReportSubject_(result, reportType, runId);
+  const body = buildPlainReportBody_(result);
+  const htmlBody = buildHtmlReportBody_(result);
 
-  MailApp.sendEmail(recipient, subject, body);
+  MailApp.sendEmail(recipient, subject, body, {
+    htmlBody,
+    name: "Gmail AutoPurge",
+  });
   labelReportEmail_(subject);
 }
 
-function buildReportBody_(result) {
+function buildReportSubject_(result, reportType, runId) {
+  if (reportType === "ERROR") {
+    return `Gmail AutoPurge needs attention: ${result.errors.length} errors (${runId})`;
+  }
+
+  return `Gmail AutoPurge moved ${result.movedToTrashCount} threads to Trash (${runId})`;
+}
+
+function buildPlainReportBody_(result) {
   const lines = [
     "Gmail AutoPurge report",
     "",
@@ -198,11 +231,130 @@ function buildReportBody_(result) {
     threads.forEach((thread) => {
       lines.push(`- ${thread.date}: ${thread.from}`);
       lines.push(`  Subject: ${thread.subject}`);
-      lines.push(`  Link: ${thread.permalink}`);
     });
   }
 
   return lines.join("\n");
+}
+
+function buildHtmlReportBody_(result) {
+  const movedThreads = result.deletedThreads.length > 0;
+  const threads = movedThreads ? result.deletedThreads : result.previewThreads;
+  const title = movedThreads
+    ? `${result.movedToTrashCount} threads moved to Trash`
+    : "Gmail AutoPurge report";
+  const subtitle = movedThreads
+    ? "Open a row to find the thread in Gmail Trash."
+    : "No threads were moved in this run.";
+
+  return [
+    '<div style="margin:0;padding:0;background:#f6f8fa;color:#202124;font-family:Arial,Helvetica,sans-serif;">',
+    '<div style="max-width:920px;margin:0 auto;padding:24px;">',
+    '<div style="background:#ffffff;border:1px solid #dadce0;border-radius:10px;overflow:hidden;">',
+    '<div style="padding:20px 24px;border-bottom:1px solid #e8eaed;">',
+    `<div style="font-size:20px;font-weight:700;line-height:1.3;">${escapeHtml_(title)}</div>`,
+    `<div style="margin-top:6px;color:#5f6368;font-size:13px;line-height:1.5;">${escapeHtml_(subtitle)}</div>`,
+    '</div>',
+    buildSummaryTable_(result),
+    buildThreadTable_(threads),
+    buildErrorBlock_(result.errors),
+    '</div>',
+    '<div style="padding:12px 4px;color:#6b7280;font-size:12px;line-height:1.5;">',
+    'Gmail AutoPurge only moves matching threads to Trash. It does not permanently delete mail.',
+    '</div>',
+    '</div>',
+    '</div>',
+  ].join("");
+}
+
+function buildSummaryTable_(result) {
+  const rows = [
+    ["Run time", result.startedAt],
+    ["Mode", result.mode],
+    ["Matched", result.matchedThreadsCount],
+    ["Moved", result.movedToTrashCount],
+    ["Skipped", result.skippedCount],
+    ["Query", result.query],
+  ];
+
+  return [
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-bottom:1px solid #e8eaed;">',
+    rows.map(([label, value]) => (
+      '<tr>' +
+      `<td style="width:120px;padding:8px 24px;color:#5f6368;font-size:12px;vertical-align:top;">${escapeHtml_(label)}</td>` +
+      `<td style="padding:8px 24px 8px 0;color:#202124;font-size:12px;vertical-align:top;">${escapeHtml_(String(value))}</td>` +
+      '</tr>'
+    )).join(""),
+    '</table>',
+  ].join("");
+}
+
+function buildThreadTable_(threads) {
+  if (threads.length === 0) {
+    return '<div style="padding:20px 24px;color:#5f6368;font-size:13px;">No threads to show.</div>';
+  }
+
+  const rows = threads.map((thread) => {
+    const date = Utilities.formatDate(
+      new Date(thread.date),
+      Session.getScriptTimeZone(),
+      "yyyy-MM-dd"
+    );
+    const subject = thread.subject || "(no subject)";
+
+    return [
+      `<tr style="border-bottom:1px solid #eef0f2;">`,
+      `<td style="padding:10px 0 10px 24px;width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#202124;font-size:13px;font-weight:600;">`,
+      `<a href="${escapeHtml_(thread.trashUrl)}" style="color:#202124;text-decoration:none;display:block;">${escapeHtml_(thread.sender || thread.from)}</a>`,
+      `</td>`,
+      `<td style="padding:10px 12px;color:#202124;font-size:13px;">`,
+      `<a href="${escapeHtml_(thread.trashUrl)}" style="color:#202124;text-decoration:none;display:block;">${escapeHtml_(subject)}</a>`,
+      `</td>`,
+      `<td style="padding:10px 24px 10px 0;width:96px;text-align:right;color:#5f6368;font-size:12px;white-space:nowrap;">`,
+      `<a href="${escapeHtml_(thread.trashUrl)}" style="color:#5f6368;text-decoration:none;display:block;">${escapeHtml_(date)}</a>`,
+      `</td>`,
+      `</tr>`,
+    ].join("");
+  }).join("");
+
+  return [
+    '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">',
+    '<thead>',
+    '<tr style="background:#f8fafd;border-bottom:1px solid #e8eaed;">',
+    '<th align="left" style="padding:9px 0 9px 24px;color:#5f6368;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">From</th>',
+    '<th align="left" style="padding:9px 12px;color:#5f6368;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Subject</th>',
+    '<th align="right" style="padding:9px 24px 9px 0;color:#5f6368;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Date</th>',
+    '</tr>',
+    '</thead>',
+    '<tbody>',
+    rows,
+    '</tbody>',
+    '</table>',
+  ].join("");
+}
+
+function buildErrorBlock_(errors) {
+  if (errors.length === 0) {
+    return "";
+  }
+
+  return [
+    '<div style="padding:16px 24px;border-top:1px solid #e8eaed;background:#fff7f7;">',
+    '<div style="color:#b3261e;font-size:13px;font-weight:700;">Errors</div>',
+    '<ul style="margin:8px 0 0 18px;padding:0;color:#3c4043;font-size:12px;line-height:1.5;">',
+    errors.map((error) => `<li>${escapeHtml_(error)}</li>`).join(""),
+    '</ul>',
+    '</div>',
+  ].join("");
+}
+
+function escapeHtml_(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function labelReportEmail_(subject) {

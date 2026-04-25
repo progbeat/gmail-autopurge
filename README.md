@@ -33,10 +33,10 @@ By default, active cleanup is enabled:
 const DRY_RUN = false;
 ```
 
-To avoid tiny surprise cleanups, a run only moves mail when it finds at least 100 matching Gmail threads:
+To avoid tiny surprise cleanups, a run only moves mail when it finds at least 25 matching Gmail threads:
 
 ```js
-const MIN_THREADS_TO_DELETE = 100;
+const MIN_THREADS_TO_DELETE = 25;
 const MAX_THREADS_PER_RUN = 100;
 ```
 
@@ -150,7 +150,7 @@ If you want to inspect candidates before active cleanup, run:
 previewPurgeCleanup
 ```
 
-This logs matching threads without moving anything. It ignores the minimum batch threshold so you can see candidates even when there are fewer than 100.
+This logs matching threads without moving anything. It ignores the minimum batch threshold so you can see candidates even when there are fewer than 25.
 
 ## Delete reports
 
@@ -169,7 +169,7 @@ The report includes:
 - moved count
 - skipped count
 - errors
-- sender, subject, date, and Gmail permalink for each moved thread
+- sender, subject, date, and a clickable Gmail Trash search link for each moved thread
 
 Those links should open the trashed threads in Gmail so you can restore anything important from Trash.
 
@@ -181,7 +181,7 @@ const SEND_DELETE_REPORT = false;
 
 Error reports are still sent when errors occur.
 
-No normal report email is sent when a run is skipped because fewer than 100 matching threads were found.
+No normal report email is sent when a run is skipped because fewer than 25 matching threads were found.
 
 ## Restore mail from Trash
 
@@ -234,7 +234,7 @@ const KEEP_LABEL = "Keep";
 const RETENTION_DAYS = 1000;
 const DRY_RUN = false;
 const MAX_THREADS_PER_RUN = 100;
-const MIN_THREADS_TO_DELETE = 100;
+const MIN_THREADS_TO_DELETE = 25;
 const SEND_DELETE_REPORT = true;
 ```
 
@@ -248,11 +248,11 @@ Recommended changes:
 
 ### Nothing was moved
 
-Check the execution log. If fewer than 100 matching threads were found, the run is skipped by design.
+Check the execution log. If fewer than 25 matching threads were found, the run is skipped by design.
 
 ### I want smaller batches
 
-Lower both `MIN_THREADS_TO_DELETE` and `MAX_THREADS_PER_RUN`. Keep them equal if you want predictable batch sizes.
+Lower `MAX_THREADS_PER_RUN` if you want a smaller maximum batch. Lower `MIN_THREADS_TO_DELETE` if you want cleanup to run even when fewer matching threads are found.
 
 ### I got a permissions warning
 
