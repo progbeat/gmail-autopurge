@@ -42,6 +42,57 @@ const MAX_THREADS_PER_RUN = 100;
 
 Because Gmail Apps Script moves whole threads, the batch threshold is based on Gmail threads, not individual messages.
 
+## Filter strategy
+
+The shared defaults are designed around retention risk, not sender prestige.
+
+- `Purge` is for mail that is usually low-value after a long retention window.
+- `Keep` is for personal correspondence, important contacts, and workflows where history matters.
+- The main red flag is any message that reflects movement of funds or a formal record.
+
+As a rule of thumb:
+
+- Good `Purge` candidates: review reminders, email confirmation, account confirmation, one-time codes, KYC workflow prompts, and temporary expiration notices.
+- Bad `Purge` candidates: personal conversation history, contracts, agreements, invoices, receipts, statements, transfers, withdrawals, deposits, payments, payouts, settlements, and similar records.
+
+This is why the shared defaults use broad disposable-message concepts like `verification`, `confirmation`, and `KYC`, but also include negative terms to avoid obvious financial or contractual records.
+
+## How to create safe filters
+
+Most people do not use filters because Gmail makes them feel more dangerous than they really are. The safest way to think about them is:
+
+1. Start with a Gmail search query, not a filter.
+2. Inspect recent matches manually.
+3. Only create the filter if the query mostly finds mail that would still be disposable a year later.
+4. If a query catches financial evidence or personal history, narrow it or move that source to `Keep`.
+
+Practical recommendations:
+
+- Prefer message type and exact phrases over broad domain assumptions.
+- Use exclusions for money movement and formal records.
+- Treat personal correspondence as protected by default.
+- When in doubt, create a `Keep` filter instead of a more aggressive `Purge` filter.
+- Filters in this project should only label mail. Do not auto-delete in Gmail filters.
+
+## Shared defaults vs personal extensions
+
+The default `gmail-filters.xml` should stay shared, generic, and conservative enough for many mailboxes.
+
+Good shared defaults:
+
+- review reminders
+- account verification and confirmation
+- one-time code and OTP messages
+- KYC workflow prompts
+- temporary expiration notices
+
+Usually personal-only filters:
+
+- custom finance routing
+- sender-specific `Keep` rules for your own important contacts
+- niche workflow notifications
+- travel, shopping, or developer notifications that are useful in some inboxes and noisy in others
+
 ## Fastest setup
 
 ### 1. Import the default Gmail filters
@@ -59,12 +110,27 @@ The included starter filters label these categories as `Purge`:
 
 - Agoda review reminders
 - Airbnb review reminders
-- Email confirmations
-- Temporary or expired notifications
+- account verification and email confirmation
+- one-time codes and OTP mail
+- KYC-style workflow messages
+- temporary expiration notices
 
 The filters only apply a label. They do not delete, forward, mark important, skip inbox, or mark read.
 
-### 2. Create the Apps Script project
+### 2. Add your own `Keep` filters
+
+Before turning on active cleanup, it is worth adding a few protective rules:
+
+- personal contacts whose history matters
+- clients, teammates, or counterparties
+- institutions or workflows that send contracts or evidence of funds movement
+
+Simple rule of thumb:
+
+- if old mail helps you reconstruct a relationship, use `Keep`
+- if old mail helps you reconstruct a transaction, use `Keep`
+
+### 3. Create the Apps Script project
 
 1. Open [script.google.com](https://script.google.com/).
 2. Create a new project.
