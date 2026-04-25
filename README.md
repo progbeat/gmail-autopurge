@@ -9,7 +9,7 @@ Gmail AutoPurge is a small Google Apps Script that keeps your inbox cleanup simp
 - Starred threads are protected.
 - Threads without `Purge` are ignored.
 
-The script runs inside your own Google account. It searches for old `Purge` threads and moves them to Trash in safe batches. It never permanently deletes mail.
+The script runs inside your own Google account. It searches for old `Purge` threads and moves them to Trash in safe batches.
 
 ## Safety rules
 
