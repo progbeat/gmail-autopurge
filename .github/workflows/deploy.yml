@@ -1,0 +1,46 @@
+name: Deploy Apps Script
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "*.gs"
+      - appsscript.json
+      - clasp-push.sh
+      - .github/workflows/deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Write clasp config
+        env:
+          CLASP_JSON: ${{ secrets.CLASP_JSON }}
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASP_JSON" ]; then
+            echo "Error: CLASP_JSON secret is not set."
+            exit 1
+          fi
+
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "Error: CLASPRC_JSON secret is not set."
+            exit 1
+          fi
+
+          umask 077
+          printf '%s' "$CLASP_JSON" > .clasp.json
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 .clasp.json "$HOME/.clasprc.json"
+
+      - name: Push to Google Apps Script
+        run: ./clasp-push.sh

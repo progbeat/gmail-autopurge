@@ -1,0 +1,51 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check Apps Script syntax
+        run: node -e "const fs=require('fs'); const code=fs.readdirSync('.').filter((f)=>f.endsWith('.gs')).sort().map((f)=>fs.readFileSync(f,'utf8')).join('\n'); new Function(code);"
+
+      - name: Validate Gmail filters XML
+        run: python3 -c "import xml.etree.ElementTree as ET; ET.parse('gmail-filters.xml')"
+
+      - name: Refuse committed credential files
+        run: |
+          bad_files=()
+
+          while IFS= read -r path; do
+            case "$path" in
+              .clasp.json|*/.clasp.json|\
+              .clasprc.json|*/.clasprc.json|\
+              .clasprc|*/.clasprc|\
+              credentials.json|*/credentials.json|\
+              token.json|*/token.json|\
+              client_secret*.json|*/client_secret*.json|\
+              .env|*/.env|\
+              .env.*|*/.env.*)
+                if [ "$path" != ".env.example" ] && [ "${path##*/}" != ".env.example" ]; then
+                  bad_files+=("$path")
+                fi
+                ;;
+            esac
+          done < <(git ls-files)
+
+          if [ "${#bad_files[@]}" -gt 0 ]; then
+            echo "Credential-like files are tracked:"
+            printf '  %s\n' "${bad_files[@]}"
+            exit 1
+          fi

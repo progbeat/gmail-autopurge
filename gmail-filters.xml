@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>
+  <title>Mail Filters</title>
+  <id>tag:mail.google.com,2008:filters:z0000000000000000000*0000000000000000000</id>
+  <updated>2026-04-25T00:00:00Z</updated>
+
+  <entry>
+    <category term='filter'></category>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:z0000000000000000001</id>
+    <updated>2026-04-25T00:00:00Z</updated>
+    <content></content>
+    <apps:property
+      name='hasTheWord'
+      value='(&quot;verification code&quot; OR &quot;confirmation code&quot; OR &quot;one-time code&quot; OR &quot;confirm your email&quot; OR &quot;verify your email&quot; OR &quot;account confirmation&quot;)'
+    />
+    <apps:property name='label' value='Purge'/>
+  </entry>
+
+  <entry>
+    <category term='filter'></category>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:z0000000000000000002</id>
+    <updated>2026-04-25T00:00:00Z</updated>
+    <content></content>
+    <apps:property name='hasTheWord' value='login password'/>
+    <apps:property name='label' value='Credentials'/>
+  </entry>
+
+  <entry>
+    <category term='filter'></category>
+    <title>Mail Filter</title>
+    <id>tag:mail.google.com,2008:filter:z0000000000000000003</id>
+    <updated>2026-04-25T00:00:00Z</updated>
+    <content></content>
+    <apps:property
+      name='hasTheWord'
+      value='invoice OR statement OR contract OR agreement OR transfer OR withdrawal OR deposit OR payout OR settlement OR tax OR insurance'
+    />
+    <apps:property name='label' value='Keep'/>
+  </entry>
+</feed>
