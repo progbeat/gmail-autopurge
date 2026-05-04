@@ -13,6 +13,7 @@ const ERROR_REPORTS_ENABLED = true;
 const AUTO_LABEL_CREDENTIALS = true;
 const CREDENTIALS_AUTOLABEL_WINDOW_HOURS = 48;
 const EXCLUDED_SYSTEM_QUERY_TERMS = ["-in:chats", "-in:sent", "-in:drafts", "-in:spam", "-in:trash"];
+let USER_EMAIL_ADDRESSES_CACHE = null;
 
 const PURGE_CLASSES = [
   {
@@ -22,6 +23,7 @@ const PURGE_CLASSES = [
     minThreadsToDelete: MIN_THREADS_TO_DELETE,
     protectKeep: true,
     protectStarred: true,
+    protectUserReplies: true,
     reportType: "normal",
   },
   {
@@ -31,6 +33,7 @@ const PURGE_CLASSES = [
     minThreadsToDelete: 1,
     protectKeep: false,
     protectStarred: false,
+    protectUserReplies: false,
     reportType: "urgent",
   },
 ];
@@ -217,30 +220,54 @@ function executePurgeClassCleanup_(purgeClass, options) {
   const query = buildPurgeQuery(purgeClass);
   const selection = selectOldestThreads_(query);
   const threads = selection.selectedThreads;
+  const purgeLabel = GmailApp.getUserLabelByName(purgeClass.label);
+  const approvedThreads = [];
   const deletedThreads = [];
   const previewThreads = [];
+  const classifierRejectedThreads = [];
   const errors = [];
   let movedToTrashCount = 0;
   let skippedCount = 0;
   let skippedReason = "";
 
-  if (!options.dryRun && !options.ignoreMinimum && selection.totalMatches < purgeClass.minThreadsToDelete) {
-    skippedCount = selection.totalMatches;
-    skippedReason = `Only ${selection.totalMatches} matching ${purgeClass.name} threads found; minimum is ${purgeClass.minThreadsToDelete}.`;
-  } else {
-    threads.forEach((thread) => {
-      let summary = null;
-      try {
-        summary = summarizeThread_(thread);
-        const skipReason = getThreadSkipReason_(thread);
-        if (skipReason) {
-          skippedCount += 1;
-          Logger.log(`Skipped ${purgeClass.name} thread: ${skipReason}; ${formatThreadForLog_(summary)}`);
-          return;
+  threads.forEach((thread) => {
+    let summary = null;
+    try {
+      summary = summarizeThread_(thread);
+      const skipReason = getThreadSkipReason_(thread);
+      if (skipReason) {
+        skippedCount += 1;
+        Logger.log(`Skipped ${purgeClass.name} thread: ${skipReason}; ${formatThreadForLog_(summary)}`);
+        return;
+      }
+
+      const classifierRejectReason = getThreadClassifierRejectReason_(thread, purgeClass);
+      if (classifierRejectReason) {
+        skippedCount += 1;
+        classifierRejectedThreads.push(summary);
+        Logger.log(`Rejected ${purgeClass.name} thread: ${classifierRejectReason}; ${formatThreadForLog_(summary)}`);
+
+        if (!options.dryRun && purgeLabel) {
+          purgeLabel.removeFromThread(thread);
+          Logger.log(`Removed ${purgeClass.label} label from rejected thread: ${formatThreadForLog_(summary)}`);
         }
+        return;
+      }
 
-        previewThreads.push(summary);
+      approvedThreads.push({ thread, summary });
+      previewThreads.push(summary);
+    } catch (error) {
+      skippedCount += 1;
+      errors.push(formatThreadError_(summary, error));
+    }
+  });
 
+  if (!options.dryRun && !options.ignoreMinimum && approvedThreads.length < purgeClass.minThreadsToDelete) {
+    skippedCount += approvedThreads.length;
+    skippedReason = `Only ${approvedThreads.length} ${purgeClass.name} threads passed deletion checks; minimum is ${purgeClass.minThreadsToDelete}.`;
+  } else {
+    approvedThreads.forEach(({ thread, summary }) => {
+      try {
         if (options.dryRun) {
           skippedCount += 1;
           return;
@@ -265,6 +292,8 @@ function executePurgeClassCleanup_(purgeClass, options) {
     query,
     matchedThreadsCount: selection.totalMatches,
     searchLookaheadLimit: SEARCH_LOOKAHEAD_LIMIT,
+    approvedThreadsCount: approvedThreads.length,
+    classifierRejectedThreadsCount: classifierRejectedThreads.length,
     movedToTrashCount,
     skippedCount,
     skippedReason,
@@ -343,6 +372,68 @@ function getThreadSkipReason_(thread) {
   }
 
   return "";
+}
+
+function getThreadClassifierRejectReason_(thread, purgeClass) {
+  if (purgeClass.protectUserReplies && threadHasUserReply_(thread)) {
+    return "contains user reply";
+  }
+
+  return "";
+}
+
+function threadHasUserReply_(thread) {
+  const userEmails = getUserEmailAddresses_();
+  if (userEmails.length === 0) {
+    return false;
+  }
+
+  const userEmailSet = new Set(userEmails);
+  return thread.getMessages().some((message) => (
+    userEmailSet.has(parseEmailAddress_(message.getFrom()))
+  ));
+}
+
+function getUserEmailAddresses_() {
+  if (USER_EMAIL_ADDRESSES_CACHE !== null) {
+    return USER_EMAIL_ADDRESSES_CACHE;
+  }
+
+  const emails = [];
+  addEmailAddress_(emails, Session.getActiveUser().getEmail());
+
+  try {
+    addEmailAddress_(emails, Session.getEffectiveUser().getEmail());
+  } catch (error) {
+    Logger.log(`Could not read effective user email: ${error}`);
+  }
+
+  try {
+    GmailApp.getAliases().forEach((alias) => addEmailAddress_(emails, alias));
+  } catch (error) {
+    Logger.log(`Could not read Gmail aliases: ${error}`);
+  }
+
+  USER_EMAIL_ADDRESSES_CACHE = Array.from(new Set(emails));
+  return USER_EMAIL_ADDRESSES_CACHE;
+}
+
+function addEmailAddress_(emails, value) {
+  const email = parseEmailAddress_(value);
+  if (email) {
+    emails.push(email);
+  }
+}
+
+function parseEmailAddress_(value) {
+  const text = String(value || "");
+  const bracketMatch = text.match(/<([^<>@\s]+@[^<>\s]+)>/);
+  if (bracketMatch) {
+    return bracketMatch[1].toLowerCase();
+  }
+
+  const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return emailMatch ? emailMatch[0].toLowerCase() : "";
 }
 
 function createDailyTrigger() {
@@ -445,6 +536,8 @@ function buildLogResult_(result) {
     query: result.query,
     matchedThreadsCount: result.matchedThreadsCount,
     searchLookaheadLimit: result.searchLookaheadLimit,
+    approvedThreadsCount: result.approvedThreadsCount,
+    classifierRejectedThreadsCount: result.classifierRejectedThreadsCount,
     movedToTrashCount: result.movedToTrashCount,
     skippedCount: result.skippedCount,
     skippedReason: result.skippedReason,

@@ -25,7 +25,9 @@ Unlabeled mail is ignored.
 
 Starred threads protect `Purge` threads.
 
-`Credentials` is the sharp label: `Keep` and stars do not protect it. If a thread has `Credentials` for 16 days, it goes to Trash.
+Threads with a reply from you also protect `Purge` threads. When the cleanup sees one, it removes the `Purge` label instead of trashing the thread.
+
+`Credentials` is the sharp label: `Keep`, stars, and your replies do not protect it. If a thread has `Credentials` for 16 days, it goes to Trash.
 
 Actual Gmail searches:
 
@@ -36,7 +38,7 @@ label:Credentials older_than:16d -in:chats -in:sent -in:drafts -in:spam -in:tras
 
 Trash, Spam, Sent, Drafts, and Chat threads are skipped.
 
-`Purge` waits until there are at least 25 old matches, then moves up to 50 threads per run.
+`Purge` waits until at least 25 old threads pass safety checks, then moves up to 50 threads per run. Threads with your replies do not count toward that delete batch.
 
 `Credentials` starts at 1 match and also moves up to 50 threads per run.
 
